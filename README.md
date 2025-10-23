@@ -63,6 +63,7 @@ Before starting this lab, ensure you have the following installed on your machin
 | **Node.js** | 18+ | [Download](https://nodejs.org/) | `node --version` |
 | **npm** | 9+ | (comes with Node.js) | `npm --version` |
 | **Python** | 3.11+ | [Download](https://www.python.org/downloads/) | `python3 --version` |
+| **pip** | Latest | (comes with Python) | `pip3 --version` |
 | **Git** | Latest | [Download](https://git-scm.com/) | `git --version` |
 
 ### Required Accounts
@@ -78,14 +79,14 @@ Run these commands to verify your environment:
 # Check Node.js and npm
 node --version && npm --version
 
-# Check Python
-python3 --version
+# Check Python and pip
+python3 --version && pip3 --version
 
 # Check Git
 git --version
 
 # Verify you can create virtual environments
-python3 -m venv test_env && rm -rf test_env
+python3.11 -m venv test_env && rm -rf test_env
 ```
 
 ✅ **All commands should complete without errors before proceeding.**
@@ -123,7 +124,7 @@ python3 -m venv test_env && rm -rf test_env
 
 2. **Create a Python virtual environment:**
    ```bash
-   python3 -m venv venv
+   python3.11 -m venv venv
    ```
 
 3. **Activate the virtual environment:**
@@ -373,10 +374,9 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 
 2. **Create a Flink Compute Pool:**
    - Click "Create compute pool" or "New compute pool"
-   - Name it: `f1-analytics-pool`
    - Select the same region as your Kafka cluster
-   - Choose "Basic" compute (sufficient for this lab)
-   - Set the compute units to 1 (minimum for basic tier)
+   - Name it: `f1-analytics-pool`
+   - Set the Maximum Size(in CFU) to 5 (minimum for basic tier)
    - Click "Create compute pool"
 
 3. **Wait for Compute Pool to be Ready:**
@@ -386,24 +386,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 
 **✅ Verification:** You should see your Flink compute pool in "Ready" status
 
-### Step 4.2: Create Flink Workspace
-
-**Objective:** Create a workspace using the compute pool for SQL processing
-
-1. **Create a New Workspace:**
-   - In the Flink section, click "Create workspace"
-   - Name it: `f1-analytics-workspace`
-   - Select your compute pool: `f1-analytics-pool`
-   - Choose the same environment as your Kafka cluster
-   - Click "Create workspace"
-
-2. **Wait for Workspace to be Ready:**
-   - The workspace will take 2-3 minutes to provision
-   - You'll see a "Ready" status when it's available
-
-**✅ Verification:** You should see your Flink workspace in "Ready" status
-
-### Step 4.3: Open SQL Workspace
+### Step 4.2: Open SQL Workspace
 
 **Objective:** Access the Flink SQL editor and configure the environment
 
@@ -419,7 +402,6 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 3. **Set Environment and Cluster:**
    - In the workspace settings, ensure the environment is set to your `f1-lab-environment`
    - Verify the cluster is set to your `f1-lab-cluster`
-   - Confirm the Schema Registry is properly configured
 
 4. **Verify Connection:**
    - Check that the workspace shows "Connected" status
@@ -439,7 +421,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 2. **Create the Average Speed Table:**
    Copy and paste this SQL statement:
    ```sql
-   CREATE TABLE driver_avg_speed (
+   CREATE TABLE `driver-avg-speed` (
      driver_name STRING,
      race_id STRING,
      avg_speed DOUBLE,
@@ -457,54 +439,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 
 **✅ Verification:** The table is created without errors
 
-### Step 4.5: Implement Real-Time Average Speed Calculation
-
-**Objective:** Create the Flink SQL job to calculate average speeds in real-time
-
-1. **Create the Analytics Query:**
-   Copy and paste this SQL statement:
-   ```sql
-   INSERT INTO driver_avg_speed
-   SELECT
-     driver_name,
-     race_id,
-     AVG(speed) AS avg_speed
-   FROM f1_driver_positions
-   GROUP BY driver_name, race_id;
-   ```
-
-2. **Execute the Analytics Job:**
-   - Click "Run" to start the analytics job
-   - The job will begin processing data in real-time
-   - You should see the job status as "Running"
-
-**✅ Verification:** The analytics job is running and processing data
-
-### Step 4.6: Verify Data Flow
-
-**Objective:** Confirm that data is flowing through the Flink SQL pipeline
-
-1. **Check the Output Topic:**
-   - Go back to your Confluent Cloud console
-   - Navigate to Topics
-   - Click on `driver-avg-speed` topic
-   - You should see messages being written to this topic
-
-2. **Monitor Message Flow:**
-   - In the topic view, click on "Messages"
-   - You should see JSON messages with driver names, race IDs, and average speeds
-   - Messages should appear in real-time as the race progresses
-
-3. **Verify Data Format:**
-   - Click on a message to view its content
-   - Verify the JSON structure contains:
-     - `driver_name`: Driver's name
-     - `race_id`: Race identifier
-     - `avg_speed`: Calculated average speed
-
-**✅ Verification:** You can see real-time average speed data in the output topic
-
-### Step 4.7: Test with Live Data
+### Step 4.5: Test with Live Data
 
 **Objective:** Ensure the Flink SQL job works with your running application
 
@@ -524,6 +459,29 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
    - Check that average speeds are being calculated correctly
 
 **✅ Verification:** Flink SQL is processing live race data and generating average speed analytics
+
+### Step 4.6: Implement Real-Time Average Speed Calculation
+
+**Objective:** Create the Flink SQL job to calculate average speeds in real-time
+
+1. **Create the Analytics Query:**
+   Copy and paste this SQL statement:
+   ```sql
+   INSERT INTO `driver-avg-speed`
+   SELECT
+     driver_name,
+     race_id,
+     AVG(speed) AS avg_speed
+   FROM `f1-driver-positions`
+   GROUP BY driver_name, race_id;
+   ```
+
+2. **Execute the Analytics Job:**
+   - Click "Run" to start the analytics job
+   - The job will begin processing data in real-time
+   - You should see the job status as "Running"
+
+**✅ Verification:** The analytics job is running and processing data
 
 ## Part 5: Hands-On Lab Exercises
 
