@@ -23,66 +23,23 @@ A fully functional F1 leaderboard application featuring:
 - **Live dashboard** with Server-Sent Events
 - **Data streaming pipeline** using Kafka and Flink SQL
 
-> **Duration:** 2-3 hours | **Level:** Intermediate | **Prerequisites:** Basic Python, JavaScript, and cloud concepts
-
 ![](images/architecture.gif)
 
 ## 📋 Lab Outline
 
-### Part 1: Environment Setup (30 minutes)
-- [Lab Prerequisites](#prerequisites)
-- [Confluent Cloud Setup](#confluent-cloud-setup)
-- [Local Development Environment](#local-development-environment)
-
-### Part 2: Backend Development (45 minutes)
-- [Kafka Producer Implementation](#kafka-producer-implementation)
-- [Kafka Consumer Implementation](#kafka-consumer-implementation)
-- [FastAPI Backend Setup](#fastapi-backend-setup)
-
-### Part 3: Real-Time Analytics (30 minutes)
-- [Flink SQL Setup](#flink-sql-setup)
-- [Performance Analytics Implementation](#performance-analytics-implementation)
-
-### Part 4: Frontend Development (30 minutes)
-- [React Frontend Setup](#react-frontend-setup)
-- [Real-Time Data Integration](#real-time-data-integration)
-
-### Part 5: Testing & Validation (15 minutes)
-- [End-to-End Testing](#end-to-end-testing)
-- [Performance Verification](#performance-verification)
-
-### Part 6: Cleanup (5 minutes)
-- [Resource Cleanup](#resource-cleanup)
+### Lab Steps
+1. [Lab Prerequisites](#prerequisites) - Verify environment and accounts
+2. [Local Development Environment](#part-1-environment-setup) - Set up Python and Node.js
+3. [Confluent Cloud Setup](#part-2-confluent-cloud-setup) - Create Kafka cluster and topics
+4. [Running the Application](#part-3-running-the-application) - Start backend and frontend
+5. [Implement Flink SQL Analytics](#part-4-implement-flink-sql-analytics) - Set up real-time analytics
+6. [Hands-On Lab Exercises](#part-5-hands-on-lab-exercises) - Test and explore the system
+7. [Lab Summary & Next Steps](#part-5-lab-summary--next-steps) - Learning outcomes and extensions
+8. [Cleanup](#cleanup) - Resource cleanup
 
 ## 🏗️ Architecture Overview
 
 ![](images/architecture.gif)
-
-### System Components
-
-1. **Data Generation Layer**
-   - Python-based race simulation
-   - Realistic F1 position changes
-   - Speed and performance metrics
-
-2. **Streaming Layer**
-   - Apache Kafka (Confluent Cloud)
-   - Schema Registry for data validation
-   - Real-time message streaming
-
-3. **Analytics Layer**
-   - Apache Flink SQL
-   - Real-time average speed calculations
-   - Performance metrics aggregation
-
-4. **Application Layer**
-   - FastAPI backend
-   - React frontend
-   - Server-Sent Events for live updates
-
-5. **Data Flow**
-   - Position data → Kafka → Flink SQL → Analytics
-   - Live updates → Backend → Frontend via SSE
 
 ## 🛠️ Technology Stack
 
@@ -112,14 +69,6 @@ Before starting this lab, ensure you have the following installed on your machin
 
 - **Confluent Cloud Account** (Free tier available)
   - Sign up at: [https://www.confluent.io/confluent-cloud/tryfree](https://www.confluent.io/confluent-cloud/tryfree/)
-  - No credit card required for basic cluster
-
-### System Requirements
-
-- **Operating System:** Windows 10+, macOS 10.15+, or Linux
-- **RAM:** Minimum 8GB (16GB recommended)
-- **Storage:** At least 2GB free space
-- **Internet:** Stable connection for cloud services
 
 ### Pre-Lab Verification
 
@@ -151,7 +100,7 @@ python3 -m venv test_env && rm -rf test_env
 2. **Navigate to your desired directory** (e.g., `~/workshops` or `C:\workshops`)
 3. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/kos-conf/f1-leaderboard-workshop.git
    cd f1-flink-version
    ```
 
@@ -189,11 +138,6 @@ python3 -m venv test_env && rm -rf test_env
 4. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
-   ```
-
-5. **Return to project root:**
-   ```bash
-   cd ..
    ```
 
 **✅ Verification:** Run this command to verify the backend setup:
@@ -323,13 +267,7 @@ You should see React and other dependencies listed without errors.
    - Partitions: 3
    - Click "Create with defaults"
 
-3. **Create Average Speed Topic:**
-   - Click "Create topic" again
-   - Topic name: `driver-avg-speed`
-   - Partitions: 3
-   - Click "Create with defaults"
-
-**✅ Verification:** You should see both topics in your topics list
+**✅ Verification:** You should see the topic in your topics list
 
 ### Step 2.6: Configure Application
 
@@ -422,7 +360,172 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 
 **✅ Verification:** The application loads without errors and shows the driver selection screen
 
-## Part 4: Hands-On Lab Exercises
+## Part 4: Implement Flink SQL Analytics
+
+### Step 4.1: Create Flink Compute Pool
+
+**Objective:** Set up Flink compute resources for real-time analytics processing
+
+1. **Navigate to Flink in Confluent Cloud:**
+   - In your Confluent Cloud console, look for "Flink" in the left sidebar
+   - If you don't see it, go to "Add-ons" and enable Flink
+   - Click on "Flink" to access the Flink management
+
+2. **Create a Flink Compute Pool:**
+   - Click "Create compute pool" or "New compute pool"
+   - Name it: `f1-analytics-pool`
+   - Select the same region as your Kafka cluster
+   - Choose "Basic" compute (sufficient for this lab)
+   - Set the compute units to 1 (minimum for basic tier)
+   - Click "Create compute pool"
+
+3. **Wait for Compute Pool to be Ready:**
+   - The compute pool will take 3-5 minutes to provision
+   - You'll see a "Ready" status when it's available
+   - Note the compute pool ID for later use
+
+**✅ Verification:** You should see your Flink compute pool in "Ready" status
+
+### Step 4.2: Create Flink Workspace
+
+**Objective:** Create a workspace using the compute pool for SQL processing
+
+1. **Create a New Workspace:**
+   - In the Flink section, click "Create workspace"
+   - Name it: `f1-analytics-workspace`
+   - Select your compute pool: `f1-analytics-pool`
+   - Choose the same environment as your Kafka cluster
+   - Click "Create workspace"
+
+2. **Wait for Workspace to be Ready:**
+   - The workspace will take 2-3 minutes to provision
+   - You'll see a "Ready" status when it's available
+
+**✅ Verification:** You should see your Flink workspace in "Ready" status
+
+### Step 4.3: Open SQL Workspace
+
+**Objective:** Access the Flink SQL editor and configure the environment
+
+1. **Open SQL Workspace in New Tab:**
+   - Click "Open in new tab" or right-click and select "Open in new tab"
+   - Keep this tab open throughout the lab
+
+2. **Configure Catalog and Database:**
+   - In the SQL workspace, look for the catalog/database selector
+   - Select your Confluent Cloud catalog
+   - Choose the default database or create a new one if needed
+
+3. **Set Environment and Cluster:**
+   - In the workspace settings, ensure the environment is set to your `f1-lab-environment`
+   - Verify the cluster is set to your `f1-lab-cluster`
+   - Confirm the Schema Registry is properly configured
+
+4. **Verify Connection:**
+   - Check that the workspace shows "Connected" status
+   - Verify you can see your Kafka topics in the catalog
+   - Ensure the SQL editor is ready for queries
+
+**✅ Verification:** SQL workspace is open in a new tab and properly configured with your environment and cluster
+
+### Step 4.4: Create the Driver Average Speed Table
+
+**Objective:** Set up the target table for storing calculated average speeds
+
+1. **Open the SQL Editor:**
+   - In your Flink workspace, click "SQL Editor"
+   - You'll see a query interface
+
+2. **Create the Average Speed Table:**
+   Copy and paste this SQL statement:
+   ```sql
+   CREATE TABLE driver_avg_speed (
+     driver_name STRING,
+     race_id STRING,
+     avg_speed DOUBLE,
+     PRIMARY KEY (driver_name, race_id) NOT ENFORCED
+   ) WITH (
+     'changelog.mode' = 'upsert',
+     'value.format' = 'json-registry'
+   );
+   ```
+
+3. **Execute the Statement:**
+   - Click "Run" or press Ctrl+Enter
+   - Wait for the statement to complete successfully
+   - You should see a success message
+
+**✅ Verification:** The table is created without errors
+
+### Step 4.5: Implement Real-Time Average Speed Calculation
+
+**Objective:** Create the Flink SQL job to calculate average speeds in real-time
+
+1. **Create the Analytics Query:**
+   Copy and paste this SQL statement:
+   ```sql
+   INSERT INTO driver_avg_speed
+   SELECT
+     driver_name,
+     race_id,
+     AVG(speed) AS avg_speed
+   FROM f1_driver_positions
+   GROUP BY driver_name, race_id;
+   ```
+
+2. **Execute the Analytics Job:**
+   - Click "Run" to start the analytics job
+   - The job will begin processing data in real-time
+   - You should see the job status as "Running"
+
+**✅ Verification:** The analytics job is running and processing data
+
+### Step 4.6: Verify Data Flow
+
+**Objective:** Confirm that data is flowing through the Flink SQL pipeline
+
+1. **Check the Output Topic:**
+   - Go back to your Confluent Cloud console
+   - Navigate to Topics
+   - Click on `driver-avg-speed` topic
+   - You should see messages being written to this topic
+
+2. **Monitor Message Flow:**
+   - In the topic view, click on "Messages"
+   - You should see JSON messages with driver names, race IDs, and average speeds
+   - Messages should appear in real-time as the race progresses
+
+3. **Verify Data Format:**
+   - Click on a message to view its content
+   - Verify the JSON structure contains:
+     - `driver_name`: Driver's name
+     - `race_id`: Race identifier
+     - `avg_speed`: Calculated average speed
+
+**✅ Verification:** You can see real-time average speed data in the output topic
+
+### Step 4.7: Test with Live Data
+
+**Objective:** Ensure the Flink SQL job works with your running application
+
+1. **Start a Race in Your Application:**
+   - Go to `http://localhost:5173`
+   - Select a driver and start a race
+   - Let the race run for at least 30 seconds
+
+2. **Monitor Flink Processing:**
+   - Check the Flink job metrics
+   - Look for processing rates and throughput
+   - Verify no errors in the job logs
+
+3. **Check Output Data:**
+   - Go back to the `driver-avg-speed` topic
+   - Verify new messages are being generated
+   - Check that average speeds are being calculated correctly
+
+**✅ Verification:** Flink SQL is processing live race data and generating average speed analytics
+
+## Part 5: Hands-On Lab Exercises
 
 ### Exercise 1: Test the Application Flow
 
@@ -449,68 +552,6 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
    - Let a race complete naturally
 
 **✅ Success Criteria:** All features work smoothly without errors
-
-### Exercise 2: Explore the Data Flow
-
-**Objective:** Understand how data flows through the system
-
-1. **Check Kafka Topics:**
-   - Go to your Confluent Cloud console
-   - Navigate to Topics
-   - Click on `f1-driver-positions`
-   - View the message flow in real-time
-
-2. **Monitor Schema Registry:**
-   - Check the Schema Registry in Confluent Cloud
-   - View the registered schemas
-   - Understand the data structure
-
-3. **Examine API Endpoints:**
-   - Open `http://localhost:8001/api/health`
-   - Test `http://localhost:8001/api/drivers`
-   - Check the race status endpoint
-
-**✅ Success Criteria:** You can see data flowing through all components
-
-### Exercise 3: Implement Flink SQL Analytics
-
-**Objective:** Set up real-time analytics with Flink SQL
-
-1. **Access Flink SQL:**
-   - In Confluent Cloud, navigate to Flink
-   - Create a new Flink workspace
-   - Open the SQL editor
-
-2. **Create the Average Speed Table:**
-   ```sql
-   CREATE TABLE driver_avg_speed (
-     driver_name STRING,
-     race_id STRING,
-     avg_speed DOUBLE,
-     PRIMARY KEY (driver_name, race_id) NOT ENFORCED
-   ) WITH (
-     'changelog.mode' = 'upsert',
-     'value.format' = 'json-registry'
-   );
-   ```
-
-3. **Insert Average Speed Data:**
-   ```sql
-   INSERT INTO driver_avg_speed
-   SELECT
-     driver_name,
-     race_id,
-     AVG(speed) AS avg_speed
-   FROM `f1-driver-positions`
-   GROUP BY driver_name, race_id;
-   ```
-
-4. **Monitor the Results:**
-   - Check the `driver-avg-speed` topic
-   - Verify data is being written
-   - Observe the real-time calculations
-
-**✅ Success Criteria:** Flink SQL processes data and writes to the output topic
 
 ## Troubleshooting
 
@@ -579,75 +620,6 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
    - Check API key permissions
    - Ensure topics exist
 
-#### No Data in Frontend
-
-**Problem:** Application loads but no live updates
-
-**Solutions:**
-1. **Check backend logs:**
-   - Look for Kafka consumer errors
-   - Verify position generation is working
-
-2. **Test API endpoints:**
-   ```bash
-   curl http://localhost:8001/api/health
-   curl http://localhost:8001/api/drivers
-   ```
-
-3. **Check browser console:**
-   - Open Developer Tools (F12)
-   - Look for JavaScript errors
-   - Check Network tab for failed requests
-
-#### Flink SQL Issues
-
-**Problem:** Flink SQL queries don't work
-
-**Solutions:**
-1. **Check topic names:**
-   - Ensure topic names match exactly
-   - Verify topics exist in Confluent Cloud
-
-2. **Verify schemas:**
-   - Check Schema Registry has the required schemas
-   - Ensure data format is correct
-
-3. **Test with simple query:**
-   ```sql
-   SELECT * FROM `f1-driver-positions` LIMIT 10;
-   ```
-
-### Getting Help
-
-If you encounter issues not covered here:
-
-1. **Check the logs:**
-   - Backend: Look at terminal output
-   - Frontend: Check browser console
-   - Confluent Cloud: Check cluster and topic metrics
-
-2. **Verify prerequisites:**
-   - All software versions are correct
-   - Confluent Cloud account is active
-   - Internet connection is stable
-
-3. **Restart components:**
-   - Stop all processes (Ctrl+C)
-   - Restart backend and frontend
-   - Check Confluent Cloud status
-
-## Part 5: Lab Summary & Next Steps
-
-### What You've Accomplished
-
-Congratulations! You've successfully built a complete real-time data streaming application with:
-
-✅ **Real-time Data Pipeline:** Kafka producers and consumers with schema validation  
-✅ **Live Analytics:** Flink SQL for real-time performance calculations  
-✅ **Modern Frontend:** React application with live updates via Server-Sent Events  
-✅ **Cloud Integration:** Confluent Cloud for managed Kafka and Schema Registry  
-✅ **Race Simulation:** Realistic F1 race dynamics with position changes  
-
 ### Key Learning Outcomes
 
 - **Event-Driven Architecture:** Understanding how real-time data flows through systems
@@ -658,56 +630,6 @@ Congratulations! You've successfully built a complete real-time data streaming a
 
 ### Lab Results
 ![](images/finished.png)
-
-### Next Steps & Extensions
-
-#### Beginner Extensions
-1. **Add More Analytics:**
-   - Calculate fastest lap times
-   - Track position changes per driver
-   - Add lap-by-lap analysis
-
-2. **Enhance the UI:**
-   - Add driver statistics charts
-   - Implement race history
-   - Create a mobile-responsive design
-
-3. **Improve Data Quality:**
-   - Add data validation rules
-   - Implement error handling
-   - Add data quality metrics
-
-#### Intermediate Extensions
-1. **Advanced Flink SQL:**
-   - Window functions for time-based analytics
-   - Complex event processing
-   - Machine learning integration
-
-2. **Microservices Architecture:**
-   - Split backend into multiple services
-   - Add API gateway
-   - Implement service discovery
-
-3. **Data Persistence:**
-   - Store race results in a database
-   - Add historical data analysis
-   - Implement data archiving
-
-#### Advanced Extensions
-1. **Real-time ML:**
-   - Predict race outcomes
-   - Anomaly detection
-   - Driver performance scoring
-
-2. **Scalability:**
-   - Horizontal scaling
-   - Load balancing
-   - Auto-scaling based on load
-
-3. **Monitoring & Observability:**
-   - Application metrics
-   - Distributed tracing
-   - Alerting and notifications
 
 ## Cleanup
 
@@ -734,7 +656,7 @@ Congratulations! You've successfully built a complete real-time data streaming a
    - Click "Delete cluster"
    - Confirm deletion
 
-3. **Delete Environment (Optional):**
+3. **Delete Environment:**
    - If you don't need the environment anymore
    - Delete the entire environment
 
