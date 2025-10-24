@@ -67,7 +67,7 @@ LEADERBOARD_UPDATE_SCHEMA = {
 # Driver Average Speed Key Schema (for upsert key) - matches Flink generated schema
 DRIVER_AVG_SPEED_KEY_SCHEMA = {
     "type": "record",
-    "name": "driver_avg_speed2_key",
+    "name": "driver_avg_speed_key",
     "namespace": "org.apache.flink.avro.generated.record",
     "fields": [
         {
