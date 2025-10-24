@@ -1,654 +1,294 @@
 # F1 Real-Time Analytics Lab
 
-## Workshop: Building a Live F1 Leaderboard with Kafka and Flink
+## Building a Live F1 Leaderboard with Kafka and Flink
 
-This hands-on lab will guide you through building a real-time F1 racing leaderboard application using Apache Kafka, Confluent Cloud, Apache Flink SQL, and React. You'll learn how to implement real-time data streaming, performance analytics, and live dashboards.
+Build a real-time F1 racing leaderboard using Apache Kafka, Confluent Cloud, Apache Flink SQL, and React.
 
-### 🎯 Learning Objectives
-
-By the end of this lab, you will:
-- Set up a complete real-time data streaming pipeline
-- Implement Kafka producers and consumers with schema validation
-- Use Apache Flink SQL for real-time analytics
-- Build a React frontend with live data updates
-- Understand event-driven architecture patterns
-- Work with Confluent Cloud and Schema Registry
-
-### 🏁 What You'll Build
-
-A fully functional F1 leaderboard application featuring:
-- **Real-time race simulation** with live position updates
-- **Performance analytics** with average speed tracking
-- **Interactive driver selection** and race management
-- **Live dashboard** with Server-Sent Events
-- **Data streaming pipeline** using Kafka and Flink SQL
+### What You'll Build
+- Real-time race simulation with live position updates
+- Performance analytics with average speed tracking
+- Interactive driver selection and race management
+- Live dashboard with Server-Sent Events
 
 ![](images/architecture.gif)
-
-## 📋 Lab Outline
-
-### Lab Steps
-1. [Lab Prerequisites](#prerequisites) - Verify environment and accounts
-2. [Local Development Environment](#part-1-environment-setup) - Set up Python and Node.js
-3. [Confluent Cloud Setup](#part-2-confluent-cloud-setup) - Create Kafka cluster and topics
-4. [Running the Application](#part-3-running-the-application) - Start backend and frontend
-5. [Implement Flink SQL Analytics](#part-4-implement-flink-sql-analytics) - Set up real-time analytics
-6. [Hands-On Lab Exercises](#part-5-hands-on-lab-exercises) - Test and explore the system
-7. [Lab Summary & Next Steps](#part-5-lab-summary--next-steps) - Learning outcomes and extensions
-8. [Cleanup](#cleanup) - Resource cleanup
-
-## 🏗️ Architecture Overview
-
-![](images/architecture.gif)
-
-## 🛠️ Technology Stack
-
-| Component | Technology | Purpose |
-|-----------|------------|----------|
-| **Backend** | Python 3.11, FastAPI, Uvicorn | API server and business logic |
-| **Data Streaming** | Confluent Cloud, Kafka, Schema Registry | Real-time message streaming |
-| **Analytics** | Apache Flink SQL | Real-time data processing |
-| **Frontend** | React 19.1.1, Vite, JavaScript | User interface and live updates |
-| **Data Validation** | Avro, Pydantic | Schema validation and serialization |
-| **Real-time Updates** | Server-Sent Events | Live data streaming to frontend |
 
 ## Prerequisites
 
 ### Required Software
-
-Before starting this lab, ensure you have the following installed on your machine:
-
-| Software | Version | Download Link | Verification Command |
-|----------|---------|---------------|---------------------|
-| **Node.js** | 18+ | [Download](https://nodejs.org/) | `node --version` |
-| **npm** | 9+ | (comes with Node.js) | `npm --version` |
-| **Python** | 3.11+ | [Download](https://www.python.org/downloads/) | `python3 --version` |
-| **pip** | Latest | (comes with Python) | `pip3 --version` |
-| **Git** | Latest | [Download](https://git-scm.com/) | `git --version` |
+| Software | Version | Verification Command |
+|----------|---------|---------------------|
+| **Node.js** | 18+ | `node --version` |
+| **npm** | 9+ | `npm --version` |
+| **Python** | 3.11+ | `python3 --version` |
+| **pip** | Latest | `pip3 --version` |
+| **Git** | Latest | `git --version` |
 
 ### Required Accounts
-
 - **Confluent Cloud Account** (Free tier available)
   - Sign up at: [https://www.confluent.io/confluent-cloud/tryfree](https://www.confluent.io/confluent-cloud/tryfree/)
 
 ### Pre-Lab Verification
-
-Run these commands to verify your environment:
-
 ```bash
-# Check Node.js and npm
 node --version && npm --version
-
-# Check Python and pip
-python3 --version && pip3 --version
-
-# Check Git
-git --version
-
-# Verify you can create virtual environments
-python3.11 -m venv test_env && rm -rf test_env
 ```
-
-✅ **All commands should complete without errors before proceeding.**
+```bash
+python3 --version && pip3 --version
+```
+```bash
+git --version
+```
+```bash
+python3 -m venv test_env && rm -rf test_env
+```
 
 ## Part 1: Environment Setup
 
 ### Step 1.1: Clone the Repository
-
-**Objective:** Get the lab code and set up the project structure
-
-1. **Open your terminal/command prompt**
-2. **Navigate to your desired directory** (e.g., `~/workshops` or `C:\workshops`)
-3. **Clone the repository:**
-   ```bash
-   git clone https://github.com/kos-conf/f1-leaderboard-workshop.git
-   cd f1-flink-version
-   ```
-
-**✅ Verification:** You should see the following directory structure:
-```
-├── backend/
-├── frontend/
-├── images/
-└── README.md
+```bash
+git clone https://github.com/kos-conf/f1-leaderboard-workshop.git && cd f1-leaderboard-workshop
 ```
 
 ### Step 1.2: Set Up Backend Environment
-
-**Objective:** Create a Python virtual environment and install dependencies
-
-1. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
-
-2. **Create a Python virtual environment:**
-   ```bash
-   python3.11 -m venv venv
-   ```
-
-3. **Activate the virtual environment:**
-   ```bash
-   # On macOS/Linux:
-   source venv/bin/activate
-   
-   # On Windows:
-   venv\Scripts\activate
-   ```
-
-4. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-**✅ Verification:** Run this command to verify the backend setup:
 ```bash
 cd backend
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-python -c "import fastapi, confluent_kafka; print('Backend dependencies installed successfully!')"
+```
+```bash
+python3 -m venv venv
+```
+On MacOS
+```bash
+source venv/bin/activate  
+```
+On Windows: 
+```bash
+venv\Scripts\activate
+```
+```bash
+pip install -r requirements.txt
+```
+```bash
 cd ..
 ```
 
 ### Step 1.3: Set Up Frontend Environment
-
-**Objective:** Install Node.js dependencies for the React frontend
-
-1. **Navigate to the frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Node.js dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Return to project root:**
-   ```bash
-   cd ..
-   ```
-
-**✅ Verification:** Run this command to verify the frontend setup:
 ```bash
 cd frontend
-npm list react
+```
+```bash
+npm install
+```
+```bash
 cd ..
 ```
-
-You should see React and other dependencies listed without errors.
 
 ## Part 2: Confluent Cloud Setup
 
 ### Step 2.1: Create Confluent Cloud Account
-
-**Objective:** Set up your Confluent Cloud environment for Kafka streaming
-
-1. **Sign up for Confluent Cloud:**
-   - Go to [https://www.confluent.io/confluent-cloud/tryfree](https://www.confluent.io/confluent-cloud/tryfree/)
-   - Click "Start free" and create your account
-   - No credit card required for the basic cluster
-
-2. **Verify your account:**
-   - Check your email and verify your account
-   - Log in to the Confluent Cloud console
-
-**✅ Verification:** You should be able to access the Confluent Cloud dashboard at [https://confluent.cloud](https://confluent.cloud)
+- Go to [https://www.confluent.io/confluent-cloud/tryfree](https://www.confluent.io/confluent-cloud/tryfree/)
+- Sign up and verify your account
 
 ### Step 2.2: Create Environment and Cluster
+- Create environment by clicking [this](https://confluent.cloud/create-environment) link and using the name like below
 
-**Objective:** Set up the basic infrastructure for your lab
+![](images/create-environment.png)
 
-1. **Create an Environment:**
-   - In the Confluent Cloud console, click "Create environment"
-   - Name it: `f1-lab-environment`
-   - Click "Create"
+- After creation of new environment screen would be navigated to create a cluster follow below instructions
+   - Choose your own name
+   - Cluster Type: Standard
+   - Provider and Region: aws, `us-east-1`
+   - Uptime SLA: 99.9%
+   - Click one Launch Cluster
 
-2. **Create a Basic Cluster:**
-   - Click "Create cluster"
-   - Select "Basic" cluster type
-   - Choose your preferred cloud provider and region
-   - Name it: `f1-lab-cluster`
-   - Click "Create cluster"
-   - Wait for the cluster to be ready (2-3 minutes)
+![](images/create-cluster.png)
 
-**✅ Verification:** You should see your cluster status as "Available" in the Confluent Cloud console
+- Wait for cluster to be ready
 
 ### Step 2.3: Create Kafka API Key
+- Navigate to API Keys in the left sidebar
+- Click on **Create key**
+- Choose **My account** and click **Next**
+- Keep Description as empty and click on **Download and Continue** button.
 
-**Objective:** Generate credentials to connect your application to Kafka
-
-1. **Navigate to API Keys:**
-   - In the left sidebar, click "API Keys"
-   - Click "Add API Key"
-
-2. **Configure the API Key:**
-   - Select "User Account" and click "Next"
-   - Select your cluster: `f1-lab-cluster`
-   - Click "Next"
-   - Name: `f1-lab-kafka-key`
-   - Description: `API key for F1 lab application`
-   - Click "Next"
-
-3. **Download the API Key:**
-   - **IMPORTANT:** Click "Download API Key" and save the file
-   - The key will not be shown again
-   - Click "Complete"
-
-**✅ Verification:** You should have a downloaded file with your API key and secret
+![](images/create-api-key.png)
 
 ### Step 2.4: Create Schema Registry API Key
+- Click on your environment name in the top headbar as shown in the screenshot
 
-**Objective:** Set up Schema Registry for data validation
+![](images/environment-overview.png)
 
-1. **Navigate to Schema Registry:**
-   - In the left sidebar, click "Schema Registry"
-   - Click "Enable Schema Registry"
-   - Choose the same region as your cluster
-   - Click "Continue"
+- Navigate to the **Schema Registry** in the left sidebar and click on **API Keys** hyperlink card as shown in the screenshot below
 
-2. **Create Schema Registry API Key:**
-   - Click "Add API Key"
-   - Name: `f1-lab-schema-key`
-   - Description: `Schema Registry key for F1 lab`
-   - Click "Download API Key" and save the file
-   - Click "Complete"
+![](images/sr-api-keys.png)
 
-**✅ Verification:** You should have two API key files downloaded
+- Click on **Add API Key** button on top right.
+- Choose **My Account** and click **Next**.
+- Choose your environment and click **Next** as shown in the below screenshot.
+
+![](images/sr-api-keys-2.png)
+
+- Give your own **Name** and **Description** and click on **Create API key** as shown below.
+
+![](images/sr-api-keys-3.png)
+
+- Click on **Download API key** and **Continue** button.
 
 ### Step 2.5: Create Kafka Topics
+- Navigate to Environment by clicking [this](https://confluent.cloud/environments) link.
+- Choose your environment
+- Click Clusters in the left sidebar and choose your cluster.
+- Navigate to **Topics** in the left sidebar and click on **Create Topic** as shown in screenshot
 
-**Objective:** Set up the topics for your data streams
+![](images/add-topic.png)
 
-1. **Navigate to Topics:**
-   - In the left sidebar, click "Topics"
-   - Click "Create topic"
-
-2. **Create Position Topic:**
-   - Topic name: `f1-driver-positions`
-   - Partitions: 3
-   - Click "Create with defaults"
-
-**✅ Verification:** You should see the topic in your topics list
+- Use: `f1-driver-positions` for name and `3` for partitions
 
 ### Step 2.6: Configure Application
-
-**Objective:** Update the application configuration with your Confluent Cloud credentials
-
-1. **Open the configuration file:**
-   ```bash
-   code backend/config.yaml  # or use your preferred editor
-   ```
-
-2. **Update the configuration:**
-   Replace the placeholder values with your actual credentials:
-   ```yaml
-   kafka:
-     bootstrap.servers: '<YOUR_CONFLUENT_CLOUD_CLUSTER_URL>'  # From your cluster details
-     security.protocol: "SASL_SSL"
-     sasl.mechanism: "PLAIN"
-     sasl.username: '<YOUR_CONFLUENT_CLOUD_API_KEY>'  # From your Kafka API key file
-     sasl.password: '<YOUR_CONFLUENT_CLOUD_API_SECRET>'  # From your Kafka API key file
-     schema_registry_url: '<YOUR_SCHEMA_REGISTRY_URL>'  # From Schema Registry details
-     schema_registry_api_key: '<YOUR_SCHEMA_REGISTRY_API_KEY>'  # From your Schema Registry API key file
-     schema_registry_secret: '<YOUR_SCHEMA_REGISTRY_SECRET>'  # From your Schema Registry API key file
-     topics:
-       positions: "f1-driver-positions"
-       driver_avg_speed: "driver-avg-speed"
-     consumer_group: "f1-leaderboard-consumer"
-   ```
-
-**✅ Verification:** Your `config.yaml` should contain real values (not placeholders)
+Update `backend/config.yaml` with your credentials from the downloaded API Keys
+```yaml
+kafka:
+  bootstrap.servers: 'BOOTSTRAP_SERVER_URL_FROM_API_KEY_FILE'
+  security.protocol: "SASL_SSL"
+  sasl.mechanism: "PLAIN"
+  sasl.username: 'YOUR_CONFLUENT_CLOUD_API_KEY'
+  sasl.password: 'YOUR_CONFLUENT_CLOUD_API_SECRET'
+  schema_registry_url: 'YOUR_SCHEMA_REGISTRY_URL'
+  schema_registry_api_key: 'YOUR_SCHEMA_REGISTRY_API_KEY'
+  schema_registry_secret: 'YOUR_SCHEMA_REGISTRY_SECRET'
+  topics:
+    positions: "f1-driver-positions"
+    driver_avg_speed: "driver-avg-speed"
+  consumer_group: "f1-leaderboard-consumer"
+```
 
 ## Part 3: Running the Application
 
 ### Step 3.1: Start the Backend Server
-
-**Objective:** Launch the FastAPI backend with Kafka integration
-
-1. **Open a new terminal window**
-2. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
-
-3. **Activate the virtual environment:**
-   ```bash
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-4. **Start the backend server:**
-   ```bash
-   python main.py
-   ```
-
-**✅ Verification:** You should see:
+```bash
+cd backend
 ```
-Starting F1 Leaderboard API...
-INFO:     Started server process [12345]
-INFO:     Uvicorn running on http://0.0.0.0:8001
+```bash
+source venv/bin/activate
 ```
+```bash
+python3 main.py
+```
+## Note: Do not stop this server
 
 ### Step 3.2: Start the Frontend Application
-
-**Objective:** Launch the React frontend for the user interface
-
-1. **Open another new terminal window**
-2. **Navigate to the frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-
-**✅ Verification:** You should see:
+```bash
+cd frontend
 ```
-  VITE v5.0.0  ready in 500 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
+npm run dev
 ```
 
 ### Step 3.3: Access the Application
-
-**Objective:** Open the F1 leaderboard in your browser
-
-1. **Open your web browser**
-2. **Navigate to:** `http://localhost:5173`
-3. **You should see the F1 Leaderboard application**
-
-**✅ Verification:** The application loads without errors and shows the driver selection screen
+- Open `http://localhost:5173` in your browser
 
 ## Part 4: Implement Flink SQL Analytics
 
 ### Step 4.1: Create Flink Compute Pool
-
-**Objective:** Set up Flink compute resources for real-time analytics processing
-
-1. **Navigate to Flink in Confluent Cloud:**
-   - In your Confluent Cloud console, look for "Flink" in the left sidebar
-   - If you don't see it, go to "Add-ons" and enable Flink
-   - Click on "Flink" to access the Flink management
-
-2. **Create a Flink Compute Pool:**
-   - Click "Create compute pool" or "New compute pool"
-   - Select the same region as your Kafka cluster
-   - Name it: `f1-analytics-pool`
-   - Set the Maximum Size(in CFU) to 5 (minimum for basic tier)
-   - Click "Create compute pool"
-
-3. **Wait for Compute Pool to be Ready:**
-   - The compute pool will take 3-5 minutes to provision
-   - You'll see a "Ready" status when it's available
-   - Note the compute pool ID for later use
-
-**✅ Verification:** You should see your Flink compute pool in "Ready" status
+- Navigate to Flink in Confluent Cloud
+- Create compute pool: `f1-analytics-pool`
+- Set Maximum Size to 5 CFU
+- Wait for pool to be ready
 
 ### Step 4.2: Open SQL Workspace
+- Open Flink workspace in new tab
+- Configure catalog and database
+- Set environment and cluster settings
+- Verify connection
 
-**Objective:** Access the Flink SQL editor and configure the environment
+### Step 4.3: Create the Driver Average Speed Table
+```sql
+CREATE TABLE `driver-avg-speed` (
+  driver_name STRING,
+  race_id STRING,
+  avg_speed DOUBLE,
+  PRIMARY KEY (driver_name, race_id) NOT ENFORCED
+) WITH (
+  'changelog.mode' = 'upsert',
+  'value.format' = 'json-registry'
+);
+```
 
-1. **Open SQL Workspace in New Tab:**
-   - Click "Open in new tab" or right-click and select "Open in new tab"
-   - Keep this tab open throughout the lab
-
-2. **Configure Catalog and Database:**
-   - In the SQL workspace, look for the catalog/database selector
-   - Select your Confluent Cloud catalog
-   - Choose the default database or create a new one if needed
-
-3. **Set Environment and Cluster:**
-   - In the workspace settings, ensure the environment is set to your `f1-lab-environment`
-   - Verify the cluster is set to your `f1-lab-cluster`
-
-4. **Verify Connection:**
-   - Check that the workspace shows "Connected" status
-   - Verify you can see your Kafka topics in the catalog
-   - Ensure the SQL editor is ready for queries
-
-**✅ Verification:** SQL workspace is open in a new tab and properly configured with your environment and cluster
-
-### Step 4.4: Create the Driver Average Speed Table
-
-**Objective:** Set up the target table for storing calculated average speeds
-
-1. **Open the SQL Editor:**
-   - In your Flink workspace, click "SQL Editor"
-   - You'll see a query interface
-
-2. **Create the Average Speed Table:**
-   Copy and paste this SQL statement:
-   ```sql
-   CREATE TABLE `driver-avg-speed` (
-     driver_name STRING,
-     race_id STRING,
-     avg_speed DOUBLE,
-     PRIMARY KEY (driver_name, race_id) NOT ENFORCED
-   ) WITH (
-     'changelog.mode' = 'upsert',
-     'value.format' = 'json-registry'
-   );
-   ```
-
-3. **Execute the Statement:**
-   - Click "Run" or press Ctrl+Enter
-   - Wait for the statement to complete successfully
-   - You should see a success message
-
-**✅ Verification:** The table is created without errors
+### Step 4.4: Set Up the Data Source
+```sql
+CREATE TABLE f1_driver_positions (
+  driver_name STRING,
+  position INT,
+  speed DOUBLE,
+  race_id STRING,
+  timestamp BIGINT
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'f1-driver-positions',
+  'properties.bootstrap.servers' = '<YOUR_CONFLUENT_CLOUD_CLUSTER_URL>',
+  'properties.security.protocol' = 'SASL_SSL',
+  'properties.sasl.mechanism' = 'PLAIN',
+  'properties.sasl.jaas.config' = 'org.apache.kafka.common.security.plain.PlainLoginModule required username="<YOUR_CONFLUENT_CLOUD_API_KEY>" password="<YOUR_CONFLUENT_CLOUD_API_SECRET>";',
+  'format' = 'json-registry',
+  'scan.startup.mode' = 'latest-offset'
+);
+```
 
 ### Step 4.5: Test with Live Data
-
-**Objective:** Ensure the Flink SQL job works with your running application
-
-1. **Start a Race in Your Application:**
-   - Go to `http://localhost:5173`
-   - Select a driver and start a race
-   - Let the race run for at least 30 seconds
-
-2. **Monitor Flink Processing:**
-   - Check the Flink job metrics
-   - Look for processing rates and throughput
-   - Verify no errors in the job logs
-
-3. **Check Output Data:**
-   - Go back to the `driver-avg-speed` topic
-   - Verify new messages are being generated
-   - Check that average speeds are being calculated correctly
-
-**✅ Verification:** Flink SQL is processing live race data and generating average speed analytics
+- Start a race in your application
+- Let it run for 30 seconds
+- Check the `driver-avg-speed` topic for data
 
 ### Step 4.6: Implement Real-Time Average Speed Calculation
-
-**Objective:** Create the Flink SQL job to calculate average speeds in real-time
-
-1. **Create the Analytics Query:**
-   Copy and paste this SQL statement:
-   ```sql
-   INSERT INTO `driver-avg-speed`
-   SELECT
-     driver_name,
-     race_id,
-     AVG(speed) AS avg_speed
-   FROM `f1-driver-positions`
-   GROUP BY driver_name, race_id;
-   ```
-
-2. **Execute the Analytics Job:**
-   - Click "Run" to start the analytics job
-   - The job will begin processing data in real-time
-   - You should see the job status as "Running"
-
-**✅ Verification:** The analytics job is running and processing data
+```sql
+INSERT INTO `driver-avg-speed`
+SELECT
+  driver_name,
+  race_id,
+  AVG(speed) AS avg_speed
+FROM `f1-driver-positions`
+GROUP BY driver_name, race_id;
+```
 
 ## Part 5: Hands-On Lab Exercises
 
 ### Exercise 1: Test the Application Flow
+- Select a driver and start a race
+- Watch the race starting animation
+- Monitor live position updates
+- View performance analytics
+- Test race management controls
 
-**Objective:** Verify the complete application functionality
+### Exercise 2: Explore the Data Flow
+- Check Kafka topics in Confluent Cloud
+- Monitor Schema Registry
+- Test API endpoints
+- Verify Flink analytics
 
-1. **Select a Driver:**
-   - Choose any F1 driver from the selection screen
-   - Watch the race starting animation
-   - Observe the countdown sequence
-
-2. **Monitor Live Updates:**
-   - Watch the leaderboard update in real-time
-   - Notice how positions change dynamically
-   - Check the progress bar and timer
-
-3. **View Performance Analytics:**
-   - Observe the average speed panel
-   - Notice how speeds update continuously
-   - See your selected driver highlighted
-
-4. **Test Race Management:**
-   - Try stopping the race early
-   - Start a new race with a different driver
-   - Let a race complete naturally
-
-**✅ Success Criteria:** All features work smoothly without errors
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-#### Backend Won't Start
-
-**Problem:** `python main.py` fails with import errors
-
-**Solutions:**
-1. **Check virtual environment:**
-   ```bash
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   which python  # Should point to venv/bin/python
-   ```
-
-2. **Reinstall dependencies:**
-   ```bash
-   pip install -r requirements.txt --force-reinstall
-   ```
-
-3. **Check Python version:**
-   ```bash
-   python --version  # Should be 3.11+
-   ```
-
-#### Frontend Won't Start
-
-**Problem:** `npm run dev` fails
-
-**Solutions:**
-1. **Clear npm cache:**
-   ```bash
-   npm cache clean --force
-   ```
-
-2. **Delete node_modules and reinstall:**
-   ```bash
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-3. **Check Node.js version:**
-   ```bash
-   node --version  # Should be 18+
-   ```
-
-#### Kafka Connection Issues
-
-**Problem:** Backend can't connect to Confluent Cloud
-
-**Solutions:**
-1. **Verify config.yaml:**
-   - Check all credentials are correct
-   - Ensure no extra spaces or quotes
-   - Verify topic names match exactly
-
-2. **Test connection:**
-   ```bash
-   # In backend directory with venv activated
-   python -c "from confluent_kafka import Producer; print('Kafka connection OK')"
-   ```
-
-3. **Check Confluent Cloud:**
-   - Verify cluster is running
-   - Check API key permissions
-   - Ensure topics exist
-
-### Key Learning Outcomes
-
-- **Event-Driven Architecture:** Understanding how real-time data flows through systems
-- **Kafka Integration:** Working with producers, consumers, and schema validation
-- **Stream Processing:** Using Flink SQL for real-time analytics
-- **Modern Web Development:** Building responsive UIs with real-time updates
-- **Cloud Services:** Leveraging managed services for scalable infrastructure
-
-### Lab Results
+## Results
 ![](images/finished.png)
 
 ## Cleanup
 
-### Step 1: Stop the Application
+### Stop the Application
+- Stop backend: `Ctrl+C` in backend terminal
+- Stop frontend: `Ctrl+C` in frontend terminal
 
-1. **Stop the backend:**
-   - In the backend terminal, press `Ctrl+C`
-   - Wait for graceful shutdown
+### Clean Up Confluent Cloud
+- Delete topics: `f1-driver-positions` and `driver-avg-speed`
+- Delete cluster: `f1-lab-cluster`
+- Delete environment: `f1-lab-environment`
 
-2. **Stop the frontend:**
-   - In the frontend terminal, press `Ctrl+C`
-   - Close the terminal windows
+### Local Cleanup
+```bash
+rm -rf backend/venv
+rm -rf frontend/node_modules
+```
 
-### Step 2: Clean Up Confluent Cloud
-
-1. **Delete Topics:**
-   - Go to Confluent Cloud console
-   - Navigate to Topics
-   - Delete `f1-driver-positions`
-   - Delete `driver-avg-speed`
-
-2. **Delete Cluster:**
-   - Go to your cluster settings
-   - Click "Delete cluster"
-   - Confirm deletion
-
-3. **Delete Environment:**
-   - If you don't need the environment anymore
-   - Delete the entire environment
-
-### Step 3: Local Cleanup
-
-1. **Remove Virtual Environment:**
-   ```bash
-   rm -rf backend/venv
-   ```
-
-2. **Clean Node Modules (Optional):**
-   ```bash
-   rm -rf frontend/node_modules
-   ```
-
-## Resources & Further Learning
-
-### Documentation
+## Resources
 - [Confluent Cloud Documentation](https://docs.confluent.io/cloud/current/)
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
 - [Apache Flink Documentation](https://flink.apache.org/docs/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [React Documentation](https://react.dev/)
 
-### Community
-- [Confluent Community](https://www.confluent.io/community/)
-- [Apache Kafka Community](https://kafka.apache.org/community)
-- [Flink Community](https://flink.apache.org/community.html)
-
-### Additional Labs
-- [Confluent Developer](https://developer.confluent.io/)
-- [Kafka Streams Tutorials](https://kafka.apache.org/documentation/streams/)
-- [Flink Training](https://flink.apache.org/training/)
-
 ---
 
-**🎉 Lab Complete!** You've successfully built a real-time F1 analytics application. Keep exploring and building amazing data streaming applications!
+**🎉 Lab Complete!** You've successfully built a real-time F1 analytics application.
