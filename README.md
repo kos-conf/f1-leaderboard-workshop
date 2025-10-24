@@ -43,15 +43,13 @@ python3 -m venv test_env && rm -rf test_env
 
 ## Part 1: Environment Setup
 
-### Step 1.1: Clone the Repository
+### Step 1.1: Clone the Repository and navigate to backend direcory
 ```bash
-git clone https://github.com/kos-conf/f1-leaderboard-workshop.git && cd f1-leaderboard-workshop
+git clone https://github.com/kos-conf/f1-leaderboard-workshop.git && cd f1-leaderboard-workshop/backend
 ```
 
 ### Step 1.2: Set Up Backend Environment
-```bash
-cd backend
-```
+
 Create virtual environment:
 ```bash
 python3 -m venv venv
