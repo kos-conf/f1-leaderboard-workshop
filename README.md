@@ -178,7 +178,7 @@ python3 main.py
 ## Note: Do not stop this server
 
 ### Step 3.2: Start the Frontend Application
-## Open a new terminal. Make sure you are in the directory of the repository - f1-leaderboard-workshop. Then run the following.
+Open a new terminal. Make sure you are in the directory of the repository - f1-leaderboard-workshop. Then run the following.
 ```bash
 cd frontend
 ```
