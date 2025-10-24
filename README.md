@@ -52,23 +52,28 @@ git clone https://github.com/kos-conf/f1-leaderboard-workshop.git && cd f1-leade
 ```bash
 cd backend
 ```
+Create virtual environment:
 ```bash
 python3 -m venv venv
 ```
-On MacOS
-```bash
-source venv/bin/activate  
-```
-```bash
-cd ..
-```
-On Windows: 
-```bash
-venv\Scripts\activate
-```
+Activate virtual environment:
+
+- On MacOS
+  ```bash
+  source venv/bin/activate  
+  ```
+
+- On Windows: 
+  ```bash
+  venv\Scripts\activate
+  ```
+
+Install dependecies:
+
 ```bash
 pip install -r requirements.txt
 ```
+Move to workshop root directory:
 ```bash
 cd ..
 ```
@@ -98,13 +103,8 @@ cd ..
 - After creation of new environment screen would be navigated to create a cluster follow below instructions
    - Choose your own name
    - Cluster Type: Basic
-   - Provider and Region: aws, `us-east-2`
-   - Uptime SLA: 99.9%
+   - Provider and Region: `aws`, `us-east-2`
    - Click one Launch Cluster
-
-![](images/create-cluster.png)
-
-- Wait for cluster to be ready
 
 ### Step 2.3: Create Kafka API Key
 - Navigate to API Keys in the left sidebar
@@ -143,9 +143,20 @@ cd ..
 
 ![](images/add-topic.png)
 
-- Use: `f1_driver_positions` for name and `3` for partitions
+- Use: `f1_driver_positions` for name and click **Create with defaults**
 
-### Step 2.6: Configure Application
+### Step 2.6: Create Flink Compute Pool
+- [Navigate to Flink in Confluent Cloud](https://confluent.cloud/go/flink)
+- Select your environment.
+- Make sure to select the Provider and Region as `aws`, `us-east-2` respectively.
+![](images/compute_pool_region.png)
+- Click **Continue**, then **Create**
+![](images/create_compute_pool.png)
+
+Compute pool should be created within few minutes.
+
+
+## Part 3: Configure the Application
 Update `backend/config.yaml` with your credentials from the downloaded API Keys
 ```yaml
 kafka:
@@ -163,9 +174,9 @@ kafka:
   consumer_group: "f1-leaderboard-consumer"
 ```
 
-## Part 3: Running the Application
+## Part 4: Running the Application
 
-### Step 3.1: Start the Backend Server
+### Step 4.1: Start the Backend Server
 ```bash
 cd backend
 ```
@@ -175,7 +186,7 @@ source venv/bin/activate
 ```bash
 python3 main.py
 ```
-> **Note: Do not stop this server**
+> **Note: This command needs to be running all the time. Do not stop this server. Please continue the lab on a new Terminal Tab.**
 
 ### Step 3.2: Start the Frontend Application
 Open a new terminal. Make sure you are in the directory of the repository (f1-leaderboard-workshop). Then run the following.
@@ -186,32 +197,29 @@ cd frontend
 npm run dev
 ```
 
+> **Note: This command needs to be running all the time. Do not stop this server. Please continue the lab on a new Terminal Tab.**
 
-### Step 3.3: Access the Application
+
+### Step 3.3: Access the Application and Start a race
 - Open `http://localhost:5173` in your browser
+- Select a driver and start a race
+This should start generating data to Confluent Cloud.
 
 ## Part 4: Implement Flink SQL Analytics
 
-### Step 4.1: Create Flink Compute Pool
-- [Navigate to Flink in Confluent Cloud](https://confluent.cloud/go/flink)
-- Select your environment.
-- Make sure to select the Provider and Region as aws, `us-east-2` respectively.
-![](images/compute_pool_region.png)
-- Create compute pool with a unique name.
-- Set Maximum Size to 5 CFU.
-![](images/create_compute_pool.png)
-- Wait for pool to be ready.
-
-### Step 4.2: Open SQL Workspace
-- Open Flink workspace in new tab
+### Step 4.1: Open SQL Workspace
+- In [Flink UI](https://confluent.cloud/go/flink), Open Flink workspace.
 - Configure catalog and database
 ![](images/catalog_database.png)
 - Set environment and cluster settings
 - Verify connection
 
-### Step 4.3: Create the Driver Average Speed Table
+### Step 4.2: Realtime Analytics with Confluent Cloud for Apache Flink
+
+Create `driver_avg_speed` table:
+
 ```sql
-CREATE TABLE `driver-avg-speed` (
+CREATE TABLE `driver_avg_speed` (
   driver_name STRING,
   race_id STRING,
   avg_speed DOUBLE,
@@ -222,34 +230,10 @@ CREATE TABLE `driver-avg-speed` (
 );
 ```
 
-### Step 4.4: Set Up the Data Source
-```sql
-CREATE TABLE f1_driver_positions (
-  driver_name STRING,
-  position INT,
-  speed DOUBLE,
-  race_id STRING,
-  timestamp BIGINT
-) WITH (
-  'connector' = 'kafka',
-  'topic' = 'f1-driver-positions',
-  'properties.bootstrap.servers' = '<YOUR_CONFLUENT_CLOUD_CLUSTER_URL>',
-  'properties.security.protocol' = 'SASL_SSL',
-  'properties.sasl.mechanism' = 'PLAIN',
-  'properties.sasl.jaas.config' = 'org.apache.kafka.common.security.plain.PlainLoginModule required username="<YOUR_CONFLUENT_CLOUD_API_KEY>" password="<YOUR_CONFLUENT_CLOUD_API_SECRET>";',
-  'format' = 'json-registry',
-  'scan.startup.mode' = 'latest-offset'
-);
-```
+Calculate avergae speed in Real-Time:
 
-### Step 4.5: Test with Live Data
-- Start a race in your application
-- Let it run for 30 seconds
-- Check the `driver-avg-speed` topic for data
-
-### Step 4.6: Implement Real-Time Average Speed Calculation
 ```sql
-INSERT INTO `driver-avg-speed`
+INSERT INTO `driver_avg_speed`
 SELECT
   driver_name,
   race_id,
@@ -258,20 +242,14 @@ FROM `f1-driver-positions`
 GROUP BY driver_name, race_id;
 ```
 
-## Part 5: Hands-On Lab Exercises
+## Part 6: Hands-On Lab Exercise
 
-### Exercise 1: Test the Application Flow
 - Select a driver and start a race
 - Watch the race starting animation
 - Monitor live position updates
 - View performance analytics
 - Test race management controls
 
-### Exercise 2: Explore the Data Flow
-- Check Kafka topics in Confluent Cloud
-- Monitor Schema Registry
-- Test API endpoints
-- Verify Flink analytics
 
 ## Results
 ![](images/finished.png)
