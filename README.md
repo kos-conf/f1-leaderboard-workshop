@@ -230,7 +230,7 @@ CREATE TABLE `driver_avg_speed` (
 );
 ```
 
-Calculate avergae speed in Real-Time:
+Calculate average speed in Real-Time:
 
 ```sql
 INSERT INTO `driver_avg_speed`
@@ -238,7 +238,7 @@ SELECT
   driver_name,
   race_id,
   AVG(speed) AS avg_speed
-FROM `f1-driver-positions`
+FROM `f1_driver_positions`
 GROUP BY driver_name, race_id;
 ```
 
