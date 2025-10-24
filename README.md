@@ -97,8 +97,8 @@ cd ..
 
 - After creation of new environment screen would be navigated to create a cluster follow below instructions
    - Choose your own name
-   - Cluster Type: Standard
-   - Provider and Region: aws, `us-east-1`
+   - Cluster Type: Basic
+   - Provider and Region: aws, `us-east-2`
    - Uptime SLA: 99.9%
    - Click one Launch Cluster
 
@@ -143,7 +143,7 @@ cd ..
 
 ![](images/add-topic.png)
 
-- Use: `f1-driver-positions` for name and `3` for partitions
+- Use: `f1_driver_positions` for name and `3` for partitions
 
 ### Step 2.6: Configure Application
 Update `backend/config.yaml` with your credentials from the downloaded API Keys
@@ -158,8 +158,8 @@ kafka:
   schema_registry_api_key: 'YOUR_SCHEMA_REGISTRY_API_KEY'
   schema_registry_secret: 'YOUR_SCHEMA_REGISTRY_SECRET'
   topics:
-    positions: "f1-driver-positions"
-    driver_avg_speed: "driver-avg-speed"
+    positions: "f1_driver_positions"
+    driver_avg_speed: "driver_avg_speed"
   consumer_group: "f1-leaderboard-consumer"
 ```
 
@@ -195,7 +195,7 @@ npm run dev
 ### Step 4.1: Create Flink Compute Pool
 - [Navigate to Flink in Confluent Cloud](https://confluent.cloud/go/flink)
 - Select your environment.
-- Make sure to select the Provider and Region as aws, `us-east-1` respectively.
+- Make sure to select the Provider and Region as aws, `us-east-2` respectively.
 ![](images/compute_pool_region.png)
 - Create compute pool with a unique name.
 - Set Maximum Size to 5 CFU.
