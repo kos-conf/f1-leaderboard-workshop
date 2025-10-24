@@ -59,6 +59,9 @@ On MacOS
 ```bash
 source venv/bin/activate  
 ```
+```bash
+cd ..
+```
 On Windows: 
 ```bash
 venv\Scripts\activate
