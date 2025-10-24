@@ -176,7 +176,7 @@ python3 main.py
 
 ### Step 3.2: Start the Frontend Application
 ```bash
-cd frontend
+cd ../frontend
 ```
 npm run dev
 ```
@@ -187,10 +187,11 @@ npm run dev
 ## Part 4: Implement Flink SQL Analytics
 
 ### Step 4.1: Create Flink Compute Pool
-- Navigate to Flink in Confluent Cloud
-- Create compute pool: `f1-analytics-pool`
-- Set Maximum Size to 5 CFU
-- Wait for pool to be ready
+- [Navigate to Flink in Confluent Cloud](https://confluent.cloud/go/flink)
+- Select your environment.
+- Create compute pool with a unique name.
+- Set Maximum Size to 5 CFU.
+- Wait for pool to be ready.
 
 ### Step 4.2: Open SQL Workspace
 - Open Flink workspace in new tab
