@@ -195,11 +195,11 @@ npm run dev
 ### Step 4.1: Create Flink Compute Pool
 - [Navigate to Flink in Confluent Cloud](https://confluent.cloud/go/flink)
 - Select your environment.
-![](images/create_compute_pool.png)
 - Make sure to select the Provider and Region as aws, `us-east-1` respectively.
 ![](images/compute_pool_region.png)
 - Create compute pool with a unique name.
 - Set Maximum Size to 5 CFU.
+![](images/create_compute_pool.png)
 - Wait for pool to be ready.
 
 ### Step 4.2: Open SQL Workspace
