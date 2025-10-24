@@ -180,6 +180,7 @@ cd ../frontend
 ```
 npm run dev
 ```
+##
 
 ### Step 3.3: Access the Application
 - Open `http://localhost:5173` in your browser
