@@ -261,7 +261,6 @@ GROUP BY driver_name, race_id;
 - Stop frontend: `Ctrl+C` in frontend terminal
 
 ### Clean Up Confluent Cloud
-- Delete topics: `f1-driver-positions` and `driver-avg-speed`
 - Delete cluster: `f1-lab-cluster`
 - Delete environment: `f1-lab-environment`
 
