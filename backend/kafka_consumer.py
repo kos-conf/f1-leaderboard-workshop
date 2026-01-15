@@ -14,7 +14,7 @@ class KafkaConsumer:
     def __init__(self):
         kafka_config = config.get_kafka_config()
         kafka_config['group.id'] = config.get_consumer_group()
-        kafka_config['auto.offset.reset'] = 'latest'
+        kafka_config['auto.offset.reset'] = 'earliest'
         # Ultra-aggressive consumer config for maximum real-time performance
         kafka_config['fetch.min.bytes'] = 1  # Fetch messages as soon as available
         kafka_config['fetch.wait.max.ms'] = 0  # No wait on server - immediate fetch
@@ -80,6 +80,10 @@ class KafkaConsumer:
         self.race_avg_speeds = {}  # New - grouped by race_id
         self.position_callbacks = []
         self.avg_speed_callbacks = []
+        
+        # Thread safety locks for concurrent access
+        self.positions_lock = threading.Lock()
+        self.avg_speeds_lock = threading.Lock()
         
         self.running = False
         self.consumer_thread = None
@@ -152,18 +156,29 @@ class KafkaConsumer:
         print("Stopped consuming from Kafka")
     
     def _consume_loop(self):
-        """Ultra-fast consumption loop for maximum real-time performance"""
+        """Ultra-fast continuous consumption loop for millisecond-level updates"""
         self.consumer.subscribe(self.topics)
+        print(f"Consumer subscribed to topics: {self.topics}")
+        
+        # Track driver_avg_speed topic for optimized processing (cache to avoid repeated lookups)
+        avg_speed_topic = config.get_topic_names()['driver_avg_speed']
+        positions_topic = config.get_topic_names()['positions']
+        
+        # Pre-create serialization contexts to avoid repeated object creation
+        avg_speed_key_ctx = SerializationContext(avg_speed_topic, MessageField.KEY)
+        avg_speed_value_ctx = SerializationContext(avg_speed_topic, MessageField.VALUE)
+        positions_value_ctx = SerializationContext(positions_topic, MessageField.VALUE)
         
         while self.running:
             try:
-                # Ultra-aggressive polling with no timeout for maximum real-time performance
-                msg_pack = self.consumer.consume(num_messages=1000, timeout=0)  # No timeout, process immediately
+                # Ultra-aggressive polling - zero timeout for maximum real-time performance
+                msg_pack = self.consumer.consume(num_messages=1000, timeout=0.0)
                 
                 if not msg_pack:
+                    # No messages available, continue immediately for next poll
                     continue
                 
-                # Process messages immediately without any delays
+                # Process all messages in batch for maximum throughput
                 for msg in msg_pack:
                     if msg is None:
                         continue
@@ -178,31 +193,48 @@ class KafkaConsumer:
                     # Parse message using appropriate deserializer
                     topic = msg.topic()
                     
-                    if topic == config.get_topic_names()['positions']:
+                    if topic == positions_topic:
                         # Deserialize positions using Avro
-                        data = self.positions_deserializer(
-                            msg.value(),
-                            SerializationContext(topic, MessageField.VALUE)
-                        )
-                        self._handle_position_update(data)
-                    elif topic == config.get_topic_names()['driver_avg_speed']:
-                        # Deserialize average speed key and value using Avro
-                        key_data = self.avg_speed_key_deserializer(
-                            msg.key(),
-                            SerializationContext(topic, MessageField.KEY)
-                        )
-                        value_data = self.avg_speed_value_deserializer(
-                            msg.value(),
-                            SerializationContext(topic, MessageField.VALUE)
-                        )
-                        self._handle_avg_speed_update(key_data, value_data)
+                        try:
+                            data = self.positions_deserializer(
+                                msg.value(),
+                                positions_value_ctx
+                            )
+                            if data:
+                                self._handle_position_update(data)
+                        except Exception as e:
+                            print(f"Error deserializing position message: {e}")
+                            continue
+                            
+                    elif topic == avg_speed_topic:
+                        # Priority processing for driver_avg_speed - process immediately
+                        try:
+                            # Deserialize key and value
+                            key_data = self.avg_speed_key_deserializer(
+                                msg.key(),
+                                avg_speed_key_ctx
+                            )
+                            value_data = self.avg_speed_value_deserializer(
+                                msg.value(),
+                                avg_speed_value_ctx
+                            )
+                            
+                            if key_data is None or value_data is None:
+                                continue
+                            
+                            # Process immediately without any delays
+                            self._handle_avg_speed_update(key_data, value_data)
+                            
+                        except Exception as e:
+                            print(f"Error deserializing driver_avg_speed message: {e}")
+                            continue
                 
             except Exception as e:
-                print(f"Error consuming message: {e}")
+                print(f"Error in consume loop: {e}")
                 continue
     
     def _handle_position_update(self, data):
-        """Handle driver position updates"""
+        """Handle driver position updates - thread-safe"""
         try:
             # Update the position for this specific driver
             driver_name = data['driver_name']
@@ -211,52 +243,58 @@ class KafkaConsumer:
             
             # Handle race-based positions
             if race_id:
-                if race_id not in self.race_positions:
-                    self.race_positions[race_id] = []
+                with self.positions_lock:
+                    if race_id not in self.race_positions:
+                        self.race_positions[race_id] = []
+                    
+                    # Find and update existing position or add new one for this race
+                    updated = False
+                    for i, pos in enumerate(self.race_positions[race_id]):
+                        if pos['driver_name'] == driver_name:
+                            self.race_positions[race_id][i] = data
+                            updated = True
+                            break
+                    
+                    if not updated:
+                        self.race_positions[race_id].append(data)
+                    
+                    # Keep only the latest 10 positions per race (one per driver)
+                    if len(self.race_positions[race_id]) > 10:
+                        self.race_positions[race_id] = self.race_positions[race_id][-10:]
+                    
+                    positions_copy = self.race_positions[race_id].copy()
                 
-                # Find and update existing position or add new one for this race
-                updated = False
-                for i, pos in enumerate(self.race_positions[race_id]):
-                    if pos['driver_name'] == driver_name:
-                        self.race_positions[race_id][i] = data
-                        updated = True
-                        break
-                
-                if not updated:
-                    self.race_positions[race_id].append(data)
-                
-                # Keep only the latest 10 positions per race (one per driver)
-                if len(self.race_positions[race_id]) > 10:
-                    self.race_positions[race_id] = self.race_positions[race_id][-10:]
-                
-                # Notify callbacks with race context
+                # Notify callbacks with race context (outside lock)
                 for callback in self.position_callbacks:
                     try:
-                        callback(self.race_positions[race_id], race_id)
+                        callback(positions_copy, race_id)
                     except Exception as e:
                         print(f"Error in position callback: {e}")
                 
             else:
                 # Legacy handling for positions without race_id
-                # Find and update existing position or add new one
-                updated = False
-                for i, pos in enumerate(self.latest_positions):
-                    if pos['driver_name'] == driver_name:
-                        self.latest_positions[i] = data
-                        updated = True
-                        break
+                with self.positions_lock:
+                    # Find and update existing position or add new one
+                    updated = False
+                    for i, pos in enumerate(self.latest_positions):
+                        if pos['driver_name'] == driver_name:
+                            self.latest_positions[i] = data
+                            updated = True
+                            break
+                    
+                    if not updated:
+                        self.latest_positions.append(data)
+                    
+                    # Keep only the latest 10 positions (one per driver)
+                    if len(self.latest_positions) > 10:
+                        self.latest_positions = self.latest_positions[-10:]
+                    
+                    positions_copy = self.latest_positions.copy()
                 
-                if not updated:
-                    self.latest_positions.append(data)
-                
-                # Keep only the latest 10 positions (one per driver)
-                if len(self.latest_positions) > 10:
-                    self.latest_positions = self.latest_positions[-10:]
-                
-                # Notify callbacks
+                # Notify callbacks (outside lock)
                 for callback in self.position_callbacks:
                     try:
-                        callback(self.latest_positions)
+                        callback(positions_copy)
                     except Exception as e:
                         print(f"Error in position callback: {e}")
                 
@@ -265,65 +303,72 @@ class KafkaConsumer:
             print(f"Error handling position update: {e}")
     
     def _handle_avg_speed_update(self, key_data, value_data):
-        """Handle driver average speed updates (upsert semantics) - optimized for low latency"""
+        """Handle driver average speed updates with thread-safe upsert for millisecond-level updates"""
         try:
             if not key_data or not value_data:
-                return  # Skip invalid data silently for performance
+                return
                 
-            driver_name = key_data['driver_name']
-            race_id = key_data['race_id']
-            avg_speed = value_data['avg_speed']
+            driver_name = key_data.get('driver_name')
+            race_id = key_data.get('race_id')
+            avg_speed = value_data.get('avg_speed')
             
-            # Fast upsert - minimal operations
-            if race_id not in self.race_avg_speeds:
-                self.race_avg_speeds[race_id] = {}
+            if not driver_name or not race_id or avg_speed is None:
+                return
             
-            # Get team name from positions data if available
+            # Quick team name lookup (minimal lock time)
             team_name = 'Unknown Team'
-            if race_id in self.race_positions:
-                for pos in self.race_positions[race_id]:
-                    if pos.get('driver_name') == driver_name and pos.get('team_name'):
-                        team_name = pos['team_name']
-                        break
+            with self.positions_lock:
+                if race_id in self.race_positions:
+                    for pos in self.race_positions[race_id]:
+                        if pos.get('driver_name') == driver_name and pos.get('team_name'):
+                            team_name = pos['team_name']
+                            break
             
-            # Create minimal data structure for speed
+            # Create data structure outside lock
             combined_data = {
                 'driver_name': driver_name,
                 'race_id': race_id,
-                'average_speed': avg_speed,
+                'average_speed': float(avg_speed),
                 'timestamp': datetime.now().isoformat(),
                 'team_name': team_name
             }
             
-            # Fast upsert
-            self.race_avg_speeds[race_id][driver_name] = combined_data
+            # Thread-safe fast upsert with minimal lock time
+            with self.avg_speeds_lock:
+                if race_id not in self.race_avg_speeds:
+                    self.race_avg_speeds[race_id] = {}
+                # Fast upsert - update immediately
+                self.race_avg_speeds[race_id][driver_name] = combined_data
             
-            # Notify callbacks
+            # Notify callbacks outside lock to avoid blocking
             for callback in self.avg_speed_callbacks:
                 try:
                     callback(combined_data, race_id)
                 except Exception as e:
                     print(f"Error in avg speed callback: {e}")
             
-            
         except Exception as e:
             print(f"Error handling avg speed update: {e}")
     
     
     def get_latest_positions(self, race_id=None):
-        """Get latest driver positions"""
-        if race_id:
-            return self.race_positions.get(race_id, [])
-        return self.latest_positions
+        """Get latest driver positions - thread-safe"""
+        with self.positions_lock:
+            if race_id:
+                return self.race_positions.get(race_id, []).copy()
+            return self.latest_positions.copy()
     
     def get_race_avg_speeds(self, race_id):
-        """Get average speeds for a specific race"""
-        if race_id not in self.race_avg_speeds:
-            return []
+        """Get average speeds for a specific race - thread-safe and optimized for millisecond access"""
+        with self.avg_speeds_lock:
+            if race_id not in self.race_avg_speeds:
+                return []
+            
+            # Fast copy and sort - minimal operations
+            avg_speeds = list(self.race_avg_speeds[race_id].values())
         
-        # Convert to list and sort by average speed (descending)
-        avg_speeds = list(self.race_avg_speeds[race_id].values())
-        avg_speeds.sort(key=lambda x: x['average_speed'], reverse=True)
+        # Sort outside lock to minimize lock time
+        avg_speeds.sort(key=lambda x: x.get('average_speed', 0), reverse=True)
         return avg_speeds
     
 
