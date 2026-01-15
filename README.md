@@ -94,7 +94,7 @@ cd ..
 - Sign up and verify your account
 
 ### Step 2.2: Create Environment and Cluster
-- Create environment by clicking [this](https://confluent.cloud/create-environment) link and using the name like below
+- Create environment by clicking Add cloud environment button visible in top right by visiting [this](https://confluent.cloud/environments?tab=cloud) link and using the name like below
 
 ![](images/create-environment.png)
 
@@ -105,7 +105,8 @@ cd ..
    - Click one Launch Cluster
 
 ### Step 2.3: Create Kafka API Key
-- Navigate to API Keys in the left sidebar
+- Navigate to API Keys as shown in the screenshot below
+![](images/api-keys.png)
 - Click on **Create key**
 - Choose **My account** and click **Next**
 - Keep Description as empty and click on **Download and Continue** button.
