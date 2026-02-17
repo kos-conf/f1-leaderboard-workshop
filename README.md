@@ -228,6 +228,17 @@ SHOW CREATE TABLE f1_driver_positions;
 
 You can find more information about all parameters [here](https://docs.confluent.io/cloud/current/flink/reference/statements/create-table.html).
 
+### Select Queries
+Let us first check the table schema for the f1_driver_positions tables. The logical schema is inferred from the topic's schema in Schema Registry.
+```bash
+DESCRIBE f1_driver_positions;
+```
+
+Let's check if any product records exist in the table.
+```bash
+SELECT * FROM f1_driver_positions;
+```
+There are multiple queries available on Confluent Cloud. You can find more information [here](https://docs.confluent.io/cloud/current/flink/reference/queries/overview.html).
 
 ## Part 4: Implement Flink SQL Analytics
 
