@@ -219,7 +219,7 @@ Check that you are able to see f1_driver_positions in the list.
 
 You can add more Workspace cells by clicking the + button on the left.
 
-#insert screenshot
+![](workspace.png)
 
 Understand how the table f1_driver_positions was created:
 ```bash
