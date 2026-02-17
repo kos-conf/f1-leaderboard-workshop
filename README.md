@@ -204,6 +204,26 @@ npm run dev
 - Select a driver and start a race
 This should start generating data to Confluent Cloud.
 
+## [Optional] Understanding Flink
+
+### Flink Compute Pool
+Confluent Cloud Flink Compute Pool is a managed environment that provides the resources needed to run Apache Flink jobs directly within Confluent Cloud. It eliminates the need for self-managed Flink clusters by offering a scalable, serverless compute layer for stream processing and real-time analytics on data in Confluent topics.
+With Compute Pools, you don't need to manually size your workload. Simply select the maximum number of Confluent Flink Units (CFUs), and Confluent will automatically scale your resources. You are only charged for the CFUs consumed by you.
+
+**Note:** Tables=Kafka topics and database = Kafka Cluster.
+For listing all the tables present, run:
+```bash
+SHOW TABLES;
+```
+Check that you are able to see f1_driver_positions in the list.
+You can add more Workspace cells by clicking the + button on the left.
+#insert screenshot
+
+Understand how the table f1_driver_positions was created:
+SHOW CREATE TABLE f1_driver_positions;
+You can find more information about all parameters [here](https://docs.confluent.io/cloud/current/flink/reference/statements/create-table.html).
+
+
 ## Part 4: Implement Flink SQL Analytics
 
 ### Step 4.1: Open SQL Workspace
@@ -212,6 +232,7 @@ This should start generating data to Confluent Cloud.
 ![](images/catalog_database.png)
 - Set environment and cluster settings
 - Verify connection
+
 
 ### Step 4.2: Realtime Analytics with Confluent Cloud for Apache Flink
 
