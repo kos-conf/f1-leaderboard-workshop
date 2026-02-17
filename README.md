@@ -216,11 +216,16 @@ For listing all the tables present, run:
 SHOW TABLES;
 ```
 Check that you are able to see f1_driver_positions in the list.
+
 You can add more Workspace cells by clicking the + button on the left.
+
 #insert screenshot
 
 Understand how the table f1_driver_positions was created:
+```bash
 SHOW CREATE TABLE f1_driver_positions;
+```
+
 You can find more information about all parameters [here](https://docs.confluent.io/cloud/current/flink/reference/statements/create-table.html).
 
 
