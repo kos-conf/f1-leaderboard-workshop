@@ -25,7 +25,7 @@ Build a real-time F1 racing leaderboard using Apache Kafka, Confluent Cloud, Apa
 
 ### Required Accounts
 - **Confluent Cloud Account** (Free tier available)
-  - Sign up at: [https://www.confluent.io/confluent-cloud/tryfree](https://www.confluent.io/confluent-cloud/tryfree/)
+  - Sign up at: [https://www.confluent.io/confluent-cloud/tryfree](cnfl.io/streaming101)
 
 ### Pre-Lab Verification
 ```bash
