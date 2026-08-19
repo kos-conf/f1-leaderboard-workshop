@@ -124,7 +124,7 @@ cd ..
 
 - Click on **Add API Key** button on top right.
 - Choose **My Account** and click **Next**.
-- Give the key a name, Select "My Account", under Key Scope select "Schema Registry, your environment and click **Next** as shown in the below screenshot.
+- Give the key a name, Select "My Account", under Key Scope select "Schema Registry" and choose your environment and click **Next** as shown in the below screenshot.
 
 ![](images/sr_key.png)
 
