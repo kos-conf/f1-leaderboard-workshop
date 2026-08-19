@@ -124,25 +124,20 @@ cd ..
 
 - Click on **Add API Key** button on top right.
 - Choose **My Account** and click **Next**.
-- Choose your environment and click **Next** as shown in the below screenshot.
+- Give the key a name, Select "My Account", under Key Scope select "Schema Registry, your environment and click **Next** as shown in the below screenshot.
 
-![](images/sr-api-keys-2.png)
+![](images/sr_key.png)
 
-- Give your own **Name** and **Description** and click on **Create API key** as shown below.
-
-![](images/sr-api-keys-3.png)
-
-- Click on **Download API key** and **Continue** button.
+- Click on **Download API key** and **Finish** button.
 
 ### Step 2.5: Create Kafka Topics
 - Navigate to Environment by clicking [this](https://confluent.cloud/environments) link.
 - Choose your environment
 - Click Clusters in the left sidebar and choose your cluster.
 - Navigate to **Topics** in the left sidebar and click on **Create Topic** as shown in screenshot
+- Use: `f1_driver_positions` for name and click **Create with defaults**
 
 ![](images/add-topic.png)
-
-- Use: `f1_driver_positions` for name and click **Create with defaults**
 
 ### Step 2.6: Create Flink Compute Pool
 - [Navigate to Flink in Confluent Cloud](https://confluent.cloud/go/flink)
