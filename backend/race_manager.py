@@ -200,13 +200,28 @@ class RaceManager:
         
         return positions
     
+    def _generate_final_positions(self, race_id: Optional[str] = None) -> Optional[List[Dict]]:
+        """Generate final positions for a specific race, falling back to the race model."""
+        if race_id is None:
+            if not self.races:
+                return None
+            race_id = next(iter(self.races))
+
+        race = self.get_race(race_id)
+        if race is None:
+            return None
+
+        if race.final_positions is None:
+            race.final_positions = race._generate_final_positions()
+        return race.final_positions
+
     def get_final_positions(self, race_id: str) -> Optional[List[Dict]]:
         """
         Get final positions for a finished race.
         
         Args:
             race_id: ID of the race
-            
+             
         Returns:
             List of final positions or None if race not found or not finished
         """
@@ -222,7 +237,7 @@ class RaceManager:
                 if latest_positions:
                     # Sort by position to ensure correct order
                     sorted_positions = sorted(latest_positions, key=lambda x: x['position'])
-                    
+                     
                     # Validate that we have exactly 10 drivers and positions 1-10
                     if len(sorted_positions) == 10 and all(1 <= p['position'] <= 10 for p in sorted_positions):
                         positions_str = [f"{p['driver_name']}: P{p['position']}" for p in sorted_positions]
@@ -234,10 +249,7 @@ class RaceManager:
             print(f"Error getting latest positions from Kafka consumer: {e}")
         
         # Fallback to generated positions if no actual data available
-        if race.final_positions is None:
-            race.final_positions = self._generate_final_positions()
-        
-        return race.final_positions
+        return self._generate_final_positions(race_id)
     
     async def start_race_simulation(self, race_id: str):
         """

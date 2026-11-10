@@ -3,7 +3,16 @@ from typing import Dict, Any
 import os
 
 class Config:
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str | None = None):
+        if config_path is None:
+            config_path = os.getenv('F1_CONFIG_PATH')
+        if config_path is None:
+            base_dir = os.path.dirname(__file__)
+            default_path = os.path.join(base_dir, 'config.yaml')
+            if os.path.exists(default_path):
+                config_path = default_path
+            else:
+                config_path = os.path.join(os.getcwd(), 'config.yaml')
         with open(config_path, 'r') as file:
             self.config = yaml.safe_load(file)
     
